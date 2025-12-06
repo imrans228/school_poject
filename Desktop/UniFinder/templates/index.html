@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}UniFinder KZ — Найди свой вуз{% endblock %}
+
+{% block content %}
+<div class="animate-in fade-in duration-700">
+    
+    <div class="relative bg-slate-900 text-white overflow-hidden shadow-2xl min-h-[600px] flex items-center rounded-b-[3rem]">
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=1800')] bg-cover bg-center opacity-20"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent"></div>
+        
+        <div class="relative z-10 p-8 md:p-16 max-w-5xl mx-auto text-center">
+            <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600/30 text-blue-300 border border-blue-500/50 mb-6 backdrop-blur-sm text-sm font-bold tracking-wider">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Образование будущего
+            </span>
+            <h1 class="text-4xl md:text-7xl font-black mb-6 leading-tight">
+                Найди идеальный университет <br>
+                <span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">в Казахстане</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
+                Сравнивай рейтинги, гранты и стоимость обучения. Используй ИИ, чтобы сделать правильный выбор.
+            </p>
+            
+            <form action="{{ url_for('catalog') }}" method="GET" class="max-w-xl mx-auto bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/20 flex gap-2 shadow-2xl">
+                <input type="text" name="search" placeholder="Найти вуз (например, КБТУ)..." class="flex-1 bg-transparent text-white placeholder-slate-400 px-6 py-4 outline-none rounded-xl text-lg">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold transition-colors flex items-center gap-2 text-lg">
+                    <i data-lucide="search" class="w-6 h-6"></i> Найти
+                </button>
+            </form>
+            
+            <div class="mt-8 flex justify-center gap-4 text-sm font-medium text-slate-400">
+                <span>Популярные запросы:</span>
+                <a href="{{ url_for('catalog', search='IT') }}" class="hover:text-white underline decoration-blue-500/50">IT</a>
+                <a href="{{ url_for('catalog', search='Медицина') }}" class="hover:text-white underline decoration-green-500/50">Медицина</a>
+                <a href="{{ url_for('catalog', search='Экономика') }}" class="hover:text-white underline decoration-purple-500/50">Экономика</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white py-20">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold text-slate-900 mb-16">Почему выбирают UniFinder?</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="p-8 rounded-2xl bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-xl transition-all duration-300">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <i data-lucide="database" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-bold text-xl mb-3">Актуальная база</h3>
+                    <p class="text-slate-500 leading-relaxed">Данные о стоимости, грантах и рейтингах обновляются ежегодно для всех городов.</p>
+                </div>
+
+                <div class="p-8 rounded-2xl bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-xl transition-all duration-300">
+                    <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <i data-lucide="bot" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-bold text-xl mb-3">AI Помощник</h3>
+                    <p class="text-slate-500 leading-relaxed">Умный бот Gemini 2.5 подскажет, куда поступить с твоими баллами ЕНТ.</p>
+                </div>
+
+                <div class="p-8 rounded-2xl bg-slate-50 hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-xl transition-all duration-300">
+                    <div class="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <i data-lucide="scale" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-bold text-xl mb-3">Удобное сравнение</h3>
+                    <p class="text-slate-500 leading-relaxed">Сравнивай вузы бок-о-бок, чтобы выбрать лучшие условия обучения.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

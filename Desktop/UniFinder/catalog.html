@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Каталог ВУЗов{% endblock %}
+
+{% block content %}
+<div class="px-4 md:px-8 py-8 max-w-7xl mx-auto">
+    
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+        
+        <div class="w-full md:w-1/4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 sticky top-20">
+            <h2 class="font-bold text-xl mb-6 flex items-center gap-2">
+                <i data-lucide="filter" class="w-5 h-5"></i> Фильтры
+            </h2>
+            
+            <form method="GET" action="{{ url_for('catalog') }}" id="filter-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Поиск</label>
+                    <input type="text" name="search" placeholder="Название вуза..." 
+                           class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Город</label>
+                    <select name="city" class="w-full border border-slate-300 rounded-lg px-4 py-2 bg-white" onchange="this.form.submit()">
+                        <option value="">Все города</option>
+                        {% for city in cities %}
+                        <option value="{{ city }}">{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition">
+                    Найти
+                </button>
+                
+                <a href="{{ url_for('catalog') }}" class="block text-center text-sm text-slate-500 hover:text-red-500 mt-2">
+                    Сбросить фильтры
+                </a>
+            </form>
+        </div>
+
+        <div class="w-full md:w-3/4">
+            
+            <h1 class="text-3xl font-bold mb-6">Каталог университетов</h1>
+
+            {% if unis|length == 0 %}
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-8 rounded-lg text-center">
+                    <i data-lucide="search-x" class="w-12 h-12 text-yellow-500 mx-auto mb-4"></i>
+                    <h3 class="text-xl font-bold text-slate-800">Ничего не найдено</h3>
+                    <p class="text-slate-600 mt-2">Попробуйте изменить параметры поиска или сбросить фильтры.</p>
+                    <a href="{{ url_for('catalog') }}" class="inline-block mt-4 bg-slate-800 text-white px-6 py-2 rounded-lg font-bold">
+                        Показать все вузы
+                    </a>
+                </div>
+            {% else %}
+                
+                <div class="grid grid-cols-1 gap-6">
+                    {% for uni in unis %}
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all border border-slate-100 overflow-hidden flex flex-col md:flex-row h-auto md:h-64">
+                        
+                        <div class="w-full md:w-1/3 relative h-48 md:h-auto">
+                            <img src="{{ uni.imageUrl }}" alt="{{ uni.name }}" class="absolute inset-0 w-full h-full object-cover">
+                            <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                                {{ uni.city }}
+                            </div>
+                        </div>
+
+                        <div class="flex-1 p-6 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <h2 class="text-xl font-bold text-slate-900 leading-tight">{{ uni.fullName }}</h2>
+                                    <div class="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-lg text-sm font-bold">
+                                        ⭐ {{ uni.rating }}
+                                    </div>
+                                </div>
+                                
+                                <p class="text-slate-500 text-sm line-clamp-2 mb-4">{{ uni.desc }}</p>
+
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-md font-medium">{{ uni.type }}</span>
+                                    <span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-md font-medium">{{ uni.direction }}</span>
+                                    {% if uni.tuition == 0 %}
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-md font-bold">Грант</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between border-t border-slate-100 pt-4 mt-auto">
+                                <label class="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-blue-600 select-none">
+                                    <input type="checkbox" onchange="toggleCompare('{{ uni.id }}')" class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm font-medium">Сравнить</span>
+                                </label>
+
+                                <a href="{{ url_for('detail', uni_id=uni.id) }}" class="bg-slate-900 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-600 transition flex items-center gap-2">
+                                    Подробнее <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    if (window.initializeCompareCheckboxes) {
+        window.initializeCompareCheckboxes();
+    }
+</script>
+{% endblock %}

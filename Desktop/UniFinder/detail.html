@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}{{ uni.fullName }}{% endblock %}
+
+{% block content %}
+<div class="animate-in slide-in-from-right-8 duration-500 bg-white min-h-screen pb-12">
+    
+    {# БЕЗОПАСНЫЕ ПЕРЕМЕННЫЕ (защита от ошибок) #}
+    {% set uni_admission = uni.admission | default({}) %}
+    {% set uni_contacts = uni.contacts | default({}) %}
+    {% set uni_stats = uni.stats | default({}) %}
+    {% set uni_features = uni.features | default([]) %}
+    
+    <div class="h-64 md:h-96 relative overflow-hidden group">
+        <img 
+            src="{{ uni.imageUrl }}" 
+            alt="Кампус {{ uni.fullName }}" 
+            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent"></div>
+        
+        <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
+            <a href="{{ url_for('catalog') }}" class="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold transition-all hover:-translate-x-1 border border-white/20">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i> Назад
+            </a>
+        </div>
+
+        <div class="absolute bottom-0 left-0 right-0 p-6 md:p-12 z-20">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <span class="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-1 shadow-lg shadow-blue-900/20">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i> {{ uni.city }}
+                    </span>
+                    <span class="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg shadow-purple-900/20">
+                        {{ uni.type }}
+                    </span>
+                    <span class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg shadow-green-900/20 flex items-center gap-1">
+                        <i data-lucide="star" class="w-4 h-4 fill-white"></i> {{ uni.rating }}
+                    </span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-black text-white leading-tight mb-2 drop-shadow-sm">{{ uni.fullName }}</h1>
+                <p class="text-slate-300 text-lg max-w-2xl">{{ uni.desc }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 md:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="md:col-span-2 space-y-8">
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center">
+                        <div class="text-3xl font-black text-blue-600 mb-1">{{ uni_stats.employment | default('90') }}%</div>
+                        <div class="text-sm font-bold text-slate-500 uppercase tracking-wide">Трудоустройство</div>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center">
+                        <div class="text-3xl font-black text-purple-600 mb-1">{{ uni_stats.grant | default('50') }}%</div>
+                        <div class="text-sm font-bold text-slate-500 uppercase tracking-wide">Грантов</div>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center col-span-2 md:col-span-1">
+                        <div class="text-3xl font-black text-green-600 mb-1">
+                            {% if uni.tuition == 0 %}
+                                0
+                            {% else %}
+                                {{ "{:,}".format(uni.tuition).replace(',', ' ') }}
+                            {% endif %}
+                        </div>
+                        <div class="text-sm font-bold text-slate-500 uppercase tracking-wide">₸ / год</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-6 h-6 text-yellow-500"></i> Почему выбирают нас?
+                    </h2>
+                    <div class="grid grid-cols-1 gap-4">
+                        {% for feature in uni_features %}
+                        <div class="flex items-start gap-4 p-4 rounded-xl bg-slate-50 hover:bg-blue-50 transition-colors">
+                            <div class="bg-white p-2 rounded-full shadow-sm">
+                                <i data-lucide="check" class="w-5 h-5 text-blue-600"></i>
+                            </div>
+                            <span class="font-medium text-slate-700 mt-1">{{ feature }}</span>
+                        </div>
+                        {% else %}
+                        <p class="text-slate-400 italic">Информация об особенностях уточняется...</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <i data-lucide="map" class="w-6 h-6 text-red-500"></i> Расположение
+                    </h2>
+                    <div class="aspect-video w-full rounded-xl overflow-hidden shadow-inner bg-slate-100 relative">
+                        <iframe 
+                            width="100%" 
+                            height="100%" 
+                            frameborder="0" 
+                            scrolling="no" 
+                            marginheight="0" 
+                            marginwidth="0" 
+                            src="https://maps.google.com/maps?q={{ uni.fullName }} {{ uni.city }}&t=&z=14&ie=UTF8&iwloc=&output=embed">
+                        </iframe>
+                        <div class="absolute inset-0 pointer-events-none border-4 border-slate-100 rounded-xl"></div>
+                    </div>
+                    <div class="mt-4 flex items-center gap-2 text-slate-600 font-medium">
+                        <i data-lucide="navigation" class="w-5 h-5 text-blue-500"></i>
+                        {{ uni_contacts.address | default(uni.city) }}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="md:col-span-1">
+                <div class="bg-slate-900 text-white rounded-2xl p-8 sticky top-24 shadow-2xl shadow-blue-900/20">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <i data-lucide="phone" class="w-5 h-5 text-blue-400"></i> Контакты
+                    </h3>
+                    
+                    <ul class="space-y-6">
+                        <li>
+                            <p class="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Телефон</p>
+                            <a href="tel:{{ uni_contacts.phone }}" class="text-lg font-bold hover:text-blue-400 transition">{{ uni_contacts.phone | default('Нет данных') }}</a>
+                        </li>
+                        <li>
+                            <p class="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Email</p>
+                            <a href="mailto:{{ uni_contacts.email }}" class="text-lg font-bold hover:text-blue-400 transition break-all">{{ uni_contacts.email | default('Нет данных') }}</a>
+                        </li>
+                        <li>
+                            <p class="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Адрес</p>
+                            <p class="font-medium text-slate-300">{{ uni_contacts.address | default(uni.city) }}</p>
+                        </li>
+                    </ul>
+
+                    <hr class="border-slate-700 my-8">
+
+                    <a href="#" class="block w-full bg-blue-600 hover:bg-blue-500 text-center py-4 rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-blue-600/50">
+                        Подать заявку
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

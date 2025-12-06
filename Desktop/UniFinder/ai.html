@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant - DataHub PRO{% endblock %}
+
+{% block content %}
+<div class="bg-gray-900 min-h-[calc(100vh-80px)] text-white flex flex-col md:flex-row overflow-hidden animate-in fade-in duration-500">
+    
+    <div class="w-full md:w-80 bg-gray-800 border-r border-gray-700 flex flex-col p-6 hidden md:flex">
+        <div class="mb-8">
+            <div class="flex items-center gap-3 text-purple-400 mb-2">
+                <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                <span class="font-bold tracking-wider">NEURAL CORE</span>
+            </div>
+            <p class="text-xs text-gray-500">
+                Модель подключена к базе данных университетов (JSON).
+            </p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Быстрые запросы</p>
+            
+            <button onclick="fillPrompt('Подбери вуз для IT специальности с общежитием')" class="w-full text-left p-3 rounded-xl bg-gray-700/50 hover:bg-purple-600/20 hover:text-purple-300 transition-all text-sm border border-transparent hover:border-purple-500/30 group">
+                <div class="font-medium mb-1 group-hover:text-white">👨‍💻 IT + Общежитие</div>
+                <div class="text-xs text-gray-500 group-hover:text-purple-200">Поиск вариантов</div>
+            </button>
+
+            <button onclick="fillPrompt('Где самое дешевое обучение на Экономику?')" class="w-full text-left p-3 rounded-xl bg-gray-700/50 hover:bg-purple-600/20 hover:text-purple-300 transition-all text-sm border border-transparent hover:border-purple-500/30 group">
+                <div class="font-medium mb-1 group-hover:text-white">💰 Бюджетная экономика</div>
+                <div class="text-xs text-gray-500 group-hover:text-purple-200">Сравнение цен</div>
+            </button>
+
+            <button onclick="fillPrompt('Сравни KBTU и Narxoz по всем параметрам')" class="w-full text-left p-3 rounded-xl bg-gray-700/50 hover:bg-purple-600/20 hover:text-purple-300 transition-all text-sm border border-transparent hover:border-purple-500/30 group">
+                <div class="font-medium mb-1 group-hover:text-white">⚖️ Сравнение ВУЗов</div>
+                <div class="text-xs text-gray-500 group-hover:text-purple-200">Аналитика</div>
+            </button>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-gray-700">
+            <button onclick="clearChat()" class="flex items-center gap-2 text-gray-400 hover:text-red-400 transition-colors text-sm w-full">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Очистить историю
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col bg-gray-900 relative">
+        
+        <div class="md:hidden p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+            <span class="font-bold text-purple-400 flex items-center gap-2">
+                <i data-lucide="bot" class="w-5 h-5"></i> PiN AI
+            </span>
+            <button onclick="clearChat()" class="p-2 text-gray-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>
+
+        <div id="chat-output" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth">
+            <div class="flex items-start gap-4 max-w-3xl mx-auto">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/20">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                </div>
+                <div class="bg-gray-800/80 border border-gray-700 p-6 rounded-2xl rounded-tl-none shadow-xl">
+                    <h3 class="text-lg font-bold text-white mb-2">Привет! Я твой AI-проводник. 🌌</h3>
+                    <p class="text-gray-300 leading-relaxed">
+                        Я загрузил полную базу данных всех университетов. Я могу:
+                    </p>
+                    <ul class="list-disc list-inside mt-2 text-gray-400 space-y-1 text-sm">
+                        <li>Найти вуз по твоему бюджету</li>
+                        <li>Сравнить рейтинги и трудоустройство</li>
+                        <li>Рассказать про гранты и общежития</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 md:p-8 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800">
+            <div class="max-w-3xl mx-auto relative">
+                <form id="chat-form" class="relative">
+                    <input 
+                        type="text" 
+                        id="user-input" 
+                        class="w-full bg-gray-800 text-white border border-gray-700 rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder-gray-500 shadow-lg"
+                        placeholder="Задай вопрос о поступлении..." 
+                        autocomplete="off"
+                    >
+                    <button type="submit" id="send-button" class="absolute right-2 top-2 bottom-2 p-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed w-10 flex items-center justify-center">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </button>
+                </form>
+                <div class="text-center mt-2">
+                    <p class="text-[10px] text-gray-600">Powered by Gemini 2.0 Flash • DataHub Pro</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatOutput = document.getElementById('chat-output');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+
+    function fillPrompt(text) {
+        userInput.value = text;
+        userInput.focus();
+    }
+
+    function clearChat() {
+        if(confirm('Очистить историю?')) {
+            while (chatOutput.children.length > 1) {
+                chatOutput.removeChild(chatOutput.lastChild);
+            }
+        }
+    }
+
+    function scrollToBottom() {
+        chatOutput.scrollTop = chatOutput.scrollHeight;
+    }
+
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
+        const isUser = sender === 'user';
+        
+        div.className = `flex items-start gap-4 max-w-3xl mx-auto ${isUser ? 'flex-row-reverse' : ''} animate-in slide-in-from-bottom-2 fade-in duration-300`;
+        
+        const avatar = isUser 
+            ? `<div class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center flex-shrink-0 shadow-md"><i data-lucide="user" class="w-5 h-5 text-gray-300"></i></div>`
+            : `<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/20"><i data-lucide="sparkles" class="w-5 h-5 text-white"></i></div>`;
+
+        const bubbleStyle = isUser 
+            ? 'bg-purple-600 text-white rounded-2xl rounded-tr-none shadow-lg shadow-purple-900/20' 
+            : 'bg-gray-800/80 border border-gray-700 text-gray-200 rounded-2xl rounded-tl-none shadow-lg';
+        
+        let formattedText = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-purple-300">$1</strong>')
+            .replace(/### (.*?)\n/g, '<h3 class="text-lg font-bold text-white mt-2 mb-1">$1</h3>')
+            .replace(/\n/g, '<br>');
+
+        div.innerHTML = `
+            ${avatar}
+            <div class="${bubbleStyle} p-5 text-sm md:text-base leading-relaxed break-words min-w-[50px]">
+                ${formattedText}
+            </div>
+        `;
+        
+        chatOutput.appendChild(div);
+        scrollToBottom();
+        lucide.createIcons();
+    }
+
+    function showLoading() {
+        const loader = document.createElement('div');
+        loader.id = 'loading-indicator';
+        loader.className = 'flex items-start gap-4 max-w-3xl mx-auto';
+        loader.innerHTML = `
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center flex-shrink-0"><i data-lucide="sparkles" class="w-5 h-5 text-white"></i></div>
+            <div class="bg-gray-800 border border-gray-700 px-6 py-4 rounded-2xl rounded-tl-none flex items-center gap-2 shadow-lg">
+                <span class="text-gray-400 text-sm mr-2">Думаю...</span>
+                <span class="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></span>
+                <span class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                <span class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+            </div>
+        `;
+        chatOutput.appendChild(loader);
+        scrollToBottom();
+        lucide.createIcons();
+    }
+
+    function removeLoading() {
+        const loader = document.getElementById('loading-indicator');
+        if (loader) loader.remove();
+    }
+
+    // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
+    document.getElementById('chat-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        addMessage(text, 'user');
+        userInput.value = '';
+        sendButton.disabled = true;
+        showLoading();
+
+        try {
+            // Теперь мы отправляем запрос не в Google, а на НАШ сервер (app.py)
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+
+            const data = await response.json();
+            
+            removeLoading();
+            
+            if (data.response) {
+                addMessage(data.response, 'ai');
+            } else {
+                addMessage("⚠️ Произошла ошибка. Попробуйте позже.", 'ai');
+            }
+
+        } catch (error) {
+            removeLoading();
+            console.error(error);
+            addMessage("⚠️ Ошибка соединения с сервером.", 'ai');
+        } finally {
+            sendButton.disabled = false;
+            userInput.focus();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}UniFinder KZ{% endblock %}</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#2563eb', 
+                        'dark': '#0f172a',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans flex flex-col min-h-screen">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
+            <a href="{{ url_for('home') }}" class="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
+                <i data-lucide="graduation-cap" class="text-blue-600"></i> UniFinder
+            </a>
+
+            <div class="flex items-center gap-6">
+                <a href="{{ url_for('catalog') }}" class="text-slate-600 hover:text-blue-600 font-medium flex items-center gap-1 transition-colors">
+                    <i data-lucide="search" class="w-4 h-4"></i> Каталог
+                </a>
+                
+                <a href="{{ url_for('ai_page') }}" class="text-slate-600 hover:text-purple-600 font-medium flex items-center gap-1 transition-colors">
+                    <i data-lucide="bot" class="w-4 h-4"></i> AI Помощник
+                </a>
+                
+                <a id="compare-link" href="#" class="relative text-white bg-green-600 px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition-colors opacity-50 pointer-events-none flex items-center gap-1 text-sm md:text-base">
+                    <i data-lucide="columns-3" class="w-5 h-5"></i> Сравнить 
+                    <span id="compare-counter" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">
+                        0
+                    </span>
+                </a>
+                
+                <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors hidden md:block">
+                    Войти
+                </a>
+            </div>
+        </nav>
+    </header>
+    
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p>&copy; 2025 UniFinder KZ. Помогаем найти будущее.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Запуск при загрузке страницы
+        window.onload = function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons(); // Рисуем иконки
+            }
+            updateCompareInfo(); // Обновляем кнопку сравнения
+            
+            // Если есть специальная функция для чекбоксов (в каталоге), запускаем её
+            if (window.initializeCompareCheckboxes) {
+                window.initializeCompareCheckboxes();
+            }
+        };
+
+        // --- ЛОГИКА СРАВНЕНИЯ ВУЗОВ ---
+
+        // 1. Получить список ID из памяти браузера
+        function getCompareIds() {
+            try {
+                const ids = localStorage.getItem('compare_unis');
+                return ids ? ids.split(',').filter(id => id) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        // 2. Обновить шапку (красный кружок и ссылку)
+        function updateCompareInfo() {
+            const ids = getCompareIds();
+            const counter = document.getElementById('compare-counter');
+            const link = document.getElementById('compare-link');
+
+            // Обновляем кружок с цифрой
+            if (counter) {
+                counter.innerText = ids.length;
+                if (ids.length > 0) {
+                    counter.classList.remove('hidden');
+                    counter.classList.add('flex');
+                } else {
+                    counter.classList.add('hidden');
+                    counter.classList.remove('flex');
+                }
+            }
+
+            // Активируем кнопку "Сравнить"
+            if (link) {
+                if (ids.length > 0) {
+                    link.classList.remove('opacity-50', 'pointer-events-none');
+                    // Формируем ссылку: /compare?ids=atu,kaznu
+                    link.href = "/compare?ids=" + ids.join(',');
+                } else {
+                    link.classList.add('opacity-50', 'pointer-events-none');
+                    link.href = "#";
+                }
+            }
+        }
+
+        // 3. Функция добавления/удаления (вызывается галочками)
+        function toggleCompare(id) {
+            let ids = getCompareIds();
+            
+            if (ids.includes(id)) {
+                // Если уже есть - удаляем
+                ids = ids.filter(i => i !== id);
+            } else {
+                // Если нет - добавляем (максимум 3)
+                if (ids.length >= 3) {
+                    alert("Можно сравнить максимум 3 вуза!");
+                    // Снимаем галочку обратно, так как нельзя добавить
+                    const checkbox = document.querySelector(`input[onchange="toggleCompare('${id}')"]`);
+                    if(checkbox) checkbox.checked = false;
+                    return;
+                }
+                ids.push(id);
+            }
+            
+            // Сохраняем и обновляем шапку
+            localStorage.setItem('compare_unis', ids.join(','));
+            updateCompareInfo();
+        }
+
+        // 4. Глобальная функция для каталога (чтобы отметить галочки при перезагрузке)
+        window.initializeCompareCheckboxes = function() {
+            const ids = getCompareIds();
+            ids.forEach(id => {
+                const checkbox = document.querySelector(`input[onchange="toggleCompare('${id}')"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+    </script>
+</body>
+</html>
