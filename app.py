@@ -1,113 +1,97 @@
 from flask import Flask, render_template, request, jsonify
-import google.generativeai as genai
 import json
 import os
+import sys
 import re
 
 # ==========================================
-# 1. ИНИЦИАЛИЗАЦИЯ И ДАННЫЕ (УПРОЩЕНО ДЛЯ RENDER)
+# 1. ИНИЦИАЛИЗАЦИЯ
 # ==========================================
-
 app = Flask(__name__)
 
-# Чтение данных прямо в app.py (чтобы избежать проблем с импортом data.py на хостинге)
+# ==========================================
+# 2. ЗАГРУЗКА ДАННЫХ (Безопасная)
+# ==========================================
 CITIES = [
     'Все города', 'Алматы', 'Астана', 'Шымкент', 'Караганда', 
     'Актобе', 'Атырау', 'Екибастуз', 'Кызылорда', 'Тараз', 
     'Костанай', 'Павлодар'
 ]
 
+# Пытаемся загрузить JSON, если не выйдет — используем пустой список, чтобы сайт не упал
 universities = []
 try:
-    # Пытаемся читать JSON файл (он должен быть в корне проекта)
-    with open('universities.json', 'r', encoding='utf-8') as f:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = os.path.join(base_dir, 'universities.json')
+    with open(json_path, 'r', encoding='utf-8') as f:
         universities = json.load(f)
-        print(f"✅ Успешно загружено {len(universities)} ВУЗов из universities.json.")
+        print(f"✅ Успешно загружено {len(universities)} ВУЗов.")
 except Exception as e:
-    print(f"❌ ОШИБКА: Не удалось загрузить universities.json. Приложение будет работать без данных. {e}")
-
+    print(f"⚠️ Ошибка загрузки universities.json: {e}")
+    # Данные для теста, если файл не найден
+    universities = []
 
 # ==========================================
-# 2. НАСТРОЙКА GEMINI (Для Render)
+# 3. НАСТРОЙКА AI (С защитой от сбоев)
 # ==========================================
-
-# Ключ берется ИСКЛЮЧИТЕЛЬНО из переменной окружения, настроенной на Render
-API_KEY = os.environ.get("AIzaSyAeZdXgu7c4vwco8FcW6fUVs3Fh0xfeMoA") 
+API_KEY = os.environ.get("AIzaSyAeZdXgu7c4vwco8FcW6fUVs3Fh0xfeMoA") # Читаем ТОЛЬКО из Render
 MODEL_NAME = 'gemini-2.5-flash'
+model = None
 
-if not API_KEY:
-    print("❌ AI: Переменная окружения 'API_KEY' не найдена. AI-ассистент отключен.")
-    model = None
-else:
-    try:
+# Безопасный импорт библиотеки
+try:
+    import google.generativeai as genai
+    if API_KEY:
         genai.configure(api_key=API_KEY)
         model = genai.GenerativeModel(MODEL_NAME)
-        print(f"🤖 AI: Модель {MODEL_NAME} успешно настроена и готова к работе.")
-    except Exception as e:
-        print(f"❌ AI: Ошибка настройки Google GenAI. Проверьте правильность ключа: {e}")
-        model = None
-
+        print("✅ AI подключен.")
+    else:
+        print("⚠️ API_KEY не найден в переменных окружения.")
+except ImportError:
+    print("❌ Библиотека google-generativeai не установлена.")
+except Exception as e:
+    print(f"❌ Ошибка настройки AI: {e}")
 
 # ==========================================
-# 3. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ RAG и АНАЛИЗА БАЛЛОВ
+# 4. ФУНКЦИЯ ПОИСКА (Которой не хватало!)
 # ==========================================
-
 def get_relevant_universities(query: str, limit: int = 5):
-    """
-    Ищет в базе данных ВУЗы, релевантные запросу.
-    """
+    """Ищет вузы по запросу или баллам."""
     query_lower = query.lower()
-    relevant_unis = []
+    relevant = []
     
-    # 1. Попытка извлечь балл из запроса
-    score = None
-    score_match = re.search(r'(\d+)\s*(балл|ент|ұбт)', query_lower)
-    if score_match:
-        try:
-            score = int(score_match.group(1))
-        except ValueError:
-            score = None
+    # Поиск балла в тексте (например "у меня 100 баллов")
+    score_match = re.search(r'(\d+)', query_lower)
+    score = int(score_match.group(1)) if score_match else None
     
-    # 2. Основной поиск и фильтрация
     for uni in universities:
-        # Если балл указан, фильтруем по нему
-        if score is not None:
-            min_score = uni.get('min_unt_score', 0)
-            if min_score > 0 and min_score <= score:
-                relevant_unis.append(uni)
-            continue
-        
-        # Если балл не указан, ищем по ключевым словам
-        uni_text = f"{uni.get('name', '')} {uni.get('fullName', '')} {uni.get('city', '')} {uni.get('direction', '')} {uni.get('desc', '')}".lower()
-        if any(keyword in uni_text for keyword in query_lower.split()):
-            relevant_unis.append(uni)
-
-    # 3. Если релевантных нет, берем 5 первых ВУЗов
-    if not relevant_unis:
-        return universities[:limit]
-        
-    return relevant_unis[:limit] # Ограничиваем количество
-
+        # Если найден балл - фильтруем по проходному баллу
+        if score:
+            if uni.get('min_unt_score', 0) <= score and uni.get('min_unt_score', 0) > 0:
+                relevant.append(uni)
+        # Иначе ищем по словам
+        else:
+            text = f"{uni.get('name')} {uni.get('city')} {uni.get('direction')}".lower()
+            if any(word in text for word in query_lower.split()):
+                relevant.append(uni)
+                
+    return relevant[:limit] if relevant else universities[:3]
 
 # ==========================================
-# 4. РОУТЫ ПРИЛОЖЕНИЯ
+# 5. МАРШРУТЫ
 # ==========================================
-
 @app.route('/')
 def home():
-    # Передаем университеты на главную страницу (если нужно)
-    return render_template('index.html', unis=universities) 
+    return render_template('index.html', unis=universities)
 
 @app.route('/catalog')
 def catalog():
     search = request.args.get('search', '').lower()
     city = request.args.get('city', '')
-    
     result = universities
     
     if search:
-        result = [u for u in result if search in u.get('name', '').lower() or search in u.get('fullName', '').lower()]
-    
+        result = [u for u in result if search in u.get('name', '').lower()]
     if city and city != "Все города":
         result = [u for u in result if u.get('city') == city]
 
@@ -132,38 +116,30 @@ def ai_page():
 @app.route('/api/chat', methods=['POST'])
 def chat_api():
     if not model:
-        return jsonify({'response': '⚠️ AI-ассистент не работает. Установите переменную окружения API_KEY на Render.'})
+        return jsonify({'response': '⚠️ AI не работает (проверьте API ключ на сервере).'})
     
     try:
         msg = request.json.get('message', '')
         
-        # --- ФИЛЬТРАЦИЯ ДАННЫХ ДЛЯ AI (RAG) ---
-        relevant_unis = get_relevant_universities(msg)
+        # 1. Находим релевантные вузы
+        relevant = get_relevant_universities(msg)
         
-        # Передаем только нужные поля, чтобы не превышать лимит токенов
-        uni_data_lite = [{'id': u.get('id'), 'name': u.get('name'), 'city': u.get('city'), 'direction': u.get('direction'), 'tuition': u.get('tuition'), 'min_unt_score': u.get('min_unt_score')} for u in relevant_unis]
+        # 2. Формируем контекст (только важные данные, чтобы не перегружать)
+        context_data = [
+            {'name': u['name'], 'city': u['city'], 'score': u.get('min_unt_score'), 'tuition': u.get('tuition')} 
+            for u in relevant
+        ]
         
-        uni_data_for_context = json.dumps(uni_data_lite, ensure_ascii=False, indent=2)
-
-        # --- СИСТЕМНАЯ ИНСТРУКЦИЯ ДЛЯ AI ---
-        context = f"""
-        Ты — UniFinder KZ, умный ассистент по подбору университетов Казахстана. 
-        Твоя главная задача:
-        1. Если пользователь указывает балл ЕНТ, рекомендуй только те ВУЗы, где 'min_unt_score' меньше или равен этому баллу.
-        2. Подбирать ВУЗы, основываясь на других параметрах ('city', 'direction', 'tuition').
-        3. Отвечай дружелюбно, кратко и по существу, используя предоставленную базу. Не придумывай информацию.
-        
-        База данных релевантных университетов (JSON, всего {len(uni_data_lite)} ВУЗов):
-        {uni_data_for_context}
-        
-        ---
-        Запрос пользователя:
+        system_prompt = f"""
+        Ты консультант UniFinder. Отвечай кратко.
+        Если спрашивают про баллы, используй поле 'score' (мин. балл).
+        Данные о вузах: {json.dumps(context_data, ensure_ascii=False)}
+        Вопрос: {msg}
         """
         
-        response = model.generate_content([context, msg])
-        
+        response = model.generate_content(system_prompt)
         return jsonify({'response': response.text})
-
+        
     except Exception as e:
-        print(f"❌ КРИТИЧЕСКАЯ ОШИБКА В API ЧАТА: {e}", file=sys.stderr)
-        return jsonify({'response': '⚠️ Произошла ошибка на сервере при обработке запроса AI. (Проверьте логи Render!)'})
+        print(f"Ошибка AI: {e}")
+        return jsonify({'response': 'Произошла ошибка при генерации ответа.'})
