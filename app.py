@@ -34,8 +34,8 @@ except Exception as e:
 # ==========================================
 # 3. НАСТРОЙКА AI (С защитой от сбоев)
 # ==========================================
-API_KEY = os.environ.get("AIzaSyAeZdXgu7c4vwco8FcW6fUVs3Fh0xfeMoA") # Читаем ТОЛЬКО из Render
-MODEL_NAME = 'gemini-2.5-flash'
+API_KEY = os.environ.get("AIzaSyAvO5d12Qqe07oVqNzGV1vS_tjix_Bb5Ho") # Читаем ТОЛЬКО из Render
+MODEL_NAME = 'gemini-1.5-flash'
 model = None
 
 # Безопасный импорт библиотеки
