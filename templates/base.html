@@ -6,11 +6,17 @@
     <title>{% block title %}UniFinder KZ{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Плавность появления */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans flex flex-col min-h-screen">
 
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <nav class="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
+            
             <a href="{{ url_for('home') }}" class="text-2xl font-black text-blue-600 flex items-center gap-2">
                 <i data-lucide="graduation-cap"></i> UniFinder
             </a>
@@ -18,18 +24,24 @@
             <div class="hidden md:flex items-center gap-8 font-medium text-slate-600">
                 <a href="{{ url_for('catalog') }}" class="hover:text-blue-600 transition">Каталог</a>
                 <a href="{{ url_for('ai_page') }}" class="hover:text-blue-600 transition flex items-center gap-1">
-                    <i data-lucide="sparkles" class="w-4 h-4 text-purple-500"></i> AI Помощник
+                    <i data-lucide="sparkles" class="w-4 h-4 text-purple-500"></i> AI
                 </a>
-                <button onclick="goToCompare()" class="hover:text-blue-600 transition relative">
+                
+                <button onclick="goToCompare()" class="hover:text-blue-600 transition relative flex items-center gap-1">
                     Сравнение
-                    <span id="compare-badge" class="hidden absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                    <span id="compare-badge" class="hidden bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full -mt-3 ml-1">0</span>
                 </button>
             </div>
 
             <div class="flex items-center gap-4">
                 {% if user %}
-                    <span class="text-sm font-bold text-slate-700">Привет, {{ user }}!</span>
-                    <a href="{{ url_for('logout') }}" class="text-sm text-red-500 hover:underline">Выйти</a>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                            {{ user[0] | upper }}
+                        </div>
+                        <span class="text-sm font-bold hidden sm:block">{{ user }}</span>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="text-sm text-red-500 hover:text-red-700 font-medium">Выйти</a>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="bg-blue-600 text-white px-5 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
                         Войти
@@ -39,7 +51,7 @@
         </nav>
     </header>
 
-    <main class="flex-grow">
+    <main class="flex-grow fade-in">
         {% block content %}{% endblock %}
     </main>
 
@@ -52,39 +64,47 @@
     <script>
         lucide.createIcons();
 
-        // 1. ФУНКЦИЯ ПЕРЕХОДА НА СТРАНИЦУ СРАВНЕНИЯ
+        // 1. Перейти на страницу сравнения
         function goToCompare() {
             const ids = localStorage.getItem('compare_unis');
-            if (!ids) {
-                alert("Сначала выберите вузы для сравнения (поставьте галочки в каталоге).");
+            if (!ids || ids.length === 0) {
+                alert("Сначала выберите вузы в каталоге (поставьте галочки 'Сравнить').");
             } else {
-                // Перенаправляем пользователя, подставляя ID в ссылку
                 window.location.href = `/compare?ids=${ids}`;
             }
         }
 
-        // 2. Логика галочек (Сохранение в память браузера)
+        // 2. Поставить/убрать галочку
         function toggleCompare(id) {
             let ids = localStorage.getItem('compare_unis') ? localStorage.getItem('compare_unis').split(',') : [];
             
+            // Очищаем пустые элементы, если есть
+            ids = ids.filter(i => i !== "");
+
             if (ids.includes(id)) {
-                ids = ids.filter(i => i !== id); // Удалить
+                // Если вуз уже есть -> удаляем
+                ids = ids.filter(i => i !== id);
             } else {
+                // Если нет -> добавляем (максимум 3)
                 if (ids.length >= 3) {
-                    alert("Максимум 3 вуза!");
-                    document.querySelector(`input[data-id="${id}"]`).checked = false;
+                    alert("Можно сравнить максимум 3 вуза!");
+                    // Снимаем галочку в UI
+                    const checkbox = document.querySelector(`input[data-id="${id}"]`);
+                    if (checkbox) checkbox.checked = false;
                     return;
                 }
-                ids.push(id); // Добавить
+                ids.push(id);
             }
             
             localStorage.setItem('compare_unis', ids.join(','));
             updateBadge();
         }
 
-        // 3. Обновление красного кружочка (счетчика)
+        // 3. Обновить счетчик (красный кружок)
         function updateBadge() {
-            const ids = localStorage.getItem('compare_unis') ? localStorage.getItem('compare_unis').split(',') : [];
+            let ids = localStorage.getItem('compare_unis') ? localStorage.getItem('compare_unis').split(',') : [];
+            ids = ids.filter(i => i !== "");
+            
             const badge = document.getElementById('compare-badge');
             if (ids.length > 0) {
                 badge.innerText = ids.length;
@@ -93,11 +113,12 @@
                 badge.classList.add('hidden');
             }
         }
-        
-        // 4. При загрузке страницы проверяем галочки
+
+        // 4. При загрузке страницы восстановить галочки
         document.addEventListener("DOMContentLoaded", () => {
             updateBadge();
-            const ids = localStorage.getItem('compare_unis') ? localStorage.getItem('compare_unis').split(',') : [];
+            let ids = localStorage.getItem('compare_unis') ? localStorage.getItem('compare_unis').split(',') : [];
+            
             ids.forEach(id => {
                 const chk = document.querySelector(`input[data-id="${id}"]`);
                 if (chk) chk.checked = true;

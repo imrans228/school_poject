@@ -1,128 +1,91 @@
 {% extends "base.html" %}
-{% block title %}Сравнение университетов{% endblock %}
+{% block title %}Сравнение вузов{% endblock %}
 
 {% block content %}
-<div class="px-4 md:px-8 py-8 max-w-7xl mx-auto animate-in fade-in duration-500">
-    <h1 class="text-3xl md:text-4xl font-black text-slate-900 mb-6">Сравнение университетов</h1>
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-black text-slate-900 mb-8 flex items-center gap-3">
+        <i data-lucide="scale" class="text-blue-600"></i> Сравнение университетов
+    </h1>
 
-    {# ПРОВЕРКА: Если список пуст или не передан #}
-    {% if not unis or unis|length == 0 %}
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg">
-            <div class="flex items-center gap-3">
-                <i data-lucide="alert-circle" class="w-6 h-6 text-yellow-600"></i>
-                <h3 class="text-lg font-bold text-yellow-800">Список пуст</h3>
+    {% if not unis %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-8 rounded-r-xl text-center">
+        <div class="flex justify-center mb-4">
+            <div class="bg-yellow-100 p-4 rounded-full">
+                <i data-lucide="alert-circle" class="w-8 h-8 text-yellow-600"></i>
             </div>
-            <p class="mt-2 text-yellow-700">Вы пока не выбрали ни одного вуза для сравнения.</p>
-            <a href="{{ url_for('catalog') }}" class="inline-block mt-4 bg-yellow-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-yellow-700 transition">
-                Перейти в каталог
-            </a>
         </div>
+        <h3 class="text-xl font-bold text-yellow-800 mb-2">Список пуст</h3>
+        <p class="text-yellow-700 mb-6">Вы не выбрали ни одного вуза. Вернитесь в каталог и поставьте галочки "Сравнить".</p>
+        <a href="{{ url_for('catalog') }}" class="inline-block bg-yellow-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-yellow-700 transition shadow-lg shadow-yellow-200">
+            Перейти в каталог
+        </a>
+    </div>
     {% else %}
-        
-        <div class="overflow-x-auto pb-4">
-            <div class="bg-white rounded-2xl shadow-xl border border-slate-100 min-w-[800px]">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-100">
-                            <th class="p-6 w-1/4 bg-slate-50 rounded-tl-2xl text-slate-500 font-medium uppercase text-sm tracking-wider">Параметр</th>
-                            {% for uni in unis %}
-                            <th class="p-6 w-1/4 align-top">
-                                <a href="{{ url_for('detail', uni_id=uni.id) }}" class="group block">
-                                    <div class="h-32 rounded-xl overflow-hidden mb-4 relative">
-                                        <img src="{{ uni.imageUrl }}" alt="{{ uni.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                    </div>
-                                    <h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                        {{ uni.name }}
-                                    </h3>
-                                </a>
-                            </th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="p-6 font-bold text-slate-700">Город</td>
-                            {% for uni in unis %}
-                            <td class="p-6 text-slate-600 flex items-center gap-2">
-                                <i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i> {{ uni.city }}
-                            </td>
-                            {% endfor %}
-                        </tr>
+    
+    <div class="overflow-x-auto rounded-2xl shadow-xl border border-slate-100 bg-white">
+        <table class="w-full min-w-[800px] text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200">
+                    <th class="p-6 text-sm font-bold text-slate-500 uppercase w-1/4">Параметры</th>
+                    {% for uni in unis %}
+                    <th class="p-6 min-w-[250px]">
+                        <div class="text-xl font-black text-slate-800">{{ uni.name }}</div>
+                        <div class="text-sm text-blue-600 font-medium">{{ uni.city }}</div>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                <tr class="hover:bg-slate-50/50">
+                    <td class="p-6 font-bold text-slate-700">Стоимость обучения</td>
+                    {% for uni in unis %}
+                    <td class="p-6 text-slate-600 font-medium">{{ uni.tuition }} ₸ / год</td>
+                    {% endfor %}
+                </tr>
+                <tr class="hover:bg-slate-50/50">
+                    <td class="p-6 font-bold text-slate-700">Проходной балл</td>
+                    {% for uni in unis %}
+                    <td class="p-6">
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold text-sm">
+                            {{ uni.min_unt_score }} баллов
+                        </span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                <tr class="hover:bg-slate-50/50">
+                    <td class="p-6 font-bold text-slate-700">Рейтинг</td>
+                    {% for uni in unis %}
+                    <td class="p-6 text-yellow-500 font-bold">⭐ {{ uni.rating }}</td>
+                    {% endfor %}
+                </tr>
+                <tr class="hover:bg-slate-50/50">
+                    <td class="p-6 font-bold text-slate-700">Направление</td>
+                    {% for uni in unis %}
+                    <td class="p-6 text-slate-600">{{ uni.direction }}</td>
+                    {% endfor %}
+                </tr>
+                <tr class="bg-slate-50/30">
+                    <td class="p-6"></td>
+                    {% for uni in unis %}
+                    <td class="p-6">
+                        <button onclick="toggleCompare('{{ uni.id }}'); window.location.reload();" 
+                                class="text-red-500 hover:text-red-700 font-bold text-sm flex items-center gap-2 transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Убрать
+                        </button>
+                    </td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="p-6 font-bold text-slate-700">Стоимость обучения</td>
-                            {% for uni in unis %}
-                            <td class="p-6">
-                                {% if uni.tuition == 0 %}
-                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Грант (Бесплатно)</span>
-                                {% else %}
-                                    <span class="font-bold text-slate-900">{{ "{:,}".format(uni.tuition).replace(',', ' ') }} ₸</span>
-                                    <span class="text-xs text-slate-400 block mt-1">в год</span>
-                                {% endif %}
-                            </td>
-                            {% endfor %}
-                        </tr>
+    <div class="mt-8 text-center">
+        <button onclick="localStorage.removeItem('compare_unis'); window.location.href='{{ url_for('catalog') }}';" 
+                class="text-slate-500 hover:text-red-500 font-medium transition underline">
+            Очистить список
+        </button>
+    </div>
 
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="p-6 font-bold text-slate-700">Рейтинг</td>
-                            {% for uni in unis %}
-                            <td class="p-6">
-                                <div class="flex items-center gap-1 font-bold text-slate-900">
-                                    <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-                                    {{ uni.rating }}
-                                </div>
-                            </td>
-                            {% endfor %}
-                        </tr>
-
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="p-6 font-bold text-slate-700">Направление</td>
-                            {% for uni in unis %}
-                            <td class="p-6">
-                                <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm font-medium">
-                                    {{ uni.direction }}
-                                </span>
-                            </td>
-                            {% endfor %}
-                        </tr>
-
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="p-6 font-bold text-slate-700">Особенности</td>
-                            {% for uni in unis %}
-                            <td class="p-6">
-                                <ul class="space-y-2">
-                                    {# Используем default([]), чтобы не было ошибки если features нет #}
-                                    {% for feature in uni.features | default([]) %}
-                                        <li class="flex items-start gap-2 text-sm text-slate-600">
-                                            <i data-lucide="check" class="w-4 h-4 text-green-500 mt-0.5 shrink-0"></i>
-                                            <span>{{ feature }}</span>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        
-                        <tr>
-                            <td class="p-6"></td>
-                            {% for uni in unis %}
-                            <td class="p-6">
-                                <button onclick="toggleCompare('{{ uni.id }}'); window.location.reload();" class="text-red-500 hover:text-red-700 text-sm font-bold flex items-center gap-1 transition-colors">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i> Убрать
-                                </button>
-                            </td>
-                            {% endfor %}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="mt-8 text-center">
-            <button onclick="localStorage.removeItem('compare_unis'); window.location.href='{{ url_for('catalog') }}';" class="text-slate-500 hover:text-red-500 font-medium transition-colors">
-                Очистить список и вернуться
-            </button>
-        </div>
     {% endif %}
 </div>
 {% endblock %}
