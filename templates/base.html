@@ -20,9 +20,10 @@
                 <a href="{{ url_for('ai_page') }}" class="hover:text-blue-600 flex items-center gap-1">
                     <i data-lucide="sparkles" class="w-4 h-4 text-purple-500"></i> AI
                 </a>
-                <button onclick="goToCompare()" class="hover:text-blue-600 relative">
+                
+                <button onclick="goToCompare()" class="hover:text-blue-600 relative flex items-center">
                     Сравнение
-                    <span id="compare-badge" class="hidden absolute -top-2 -right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                    <span id="compare-badge" class="hidden ml-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
                 </button>
             </div>
 
@@ -50,25 +51,73 @@
     <script>
         lucide.createIcons();
 
+        // Функция для получения чистого списка ID
+        function getCompareIds() {
+            const raw = localStorage.getItem('compare_unis') || "";
+            // Разбиваем строку и удаляем пустые элементы ("")
+            return raw.split(',').filter(id => id.trim().length > 0);
+        }
+
+        // 1. Переход на страницу сравнения
         function goToCompare() {
-            const ids = localStorage.getItem('compare_unis');
-            if (!ids) {
-                alert("Сначала выберите вузы в каталоге!");
+            const ids = getCompareIds();
+            if (ids.length === 0) {
+                alert("Сначала выберите вузы в каталоге (поставьте галочки).");
             } else {
-                window.location.href = `/compare?ids=${ids}`;
+                window.location.href = `/compare?ids=${ids.join(',')}`;
             }
         }
-        
-        // Обновление счетчика при загрузке
-        document.addEventListener("DOMContentLoaded", () => {
-            const ids = localStorage.getItem('compare_unis') ? localStorage.getItem('compare_unis').split(',') : [];
-            const cleanIds = ids.filter(i => i !== "");
+
+        // 2. Логика галочки (Добавить / Удалить)
+        function toggleCompare(id) {
+            let ids = getCompareIds();
+            const strId = String(id); // Убедимся, что ID это строка
+
+            if (ids.includes(strId)) {
+                // Если уже есть - удаляем
+                ids = ids.filter(i => i !== strId);
+            } else {
+                // Если нет - добавляем (лимит 3)
+                if (ids.length >= 3) {
+                    alert("Можно сравнить максимум 3 вуза! Удалите один, чтобы добавить новый.");
+                    // Снимаем галочку визуально, так как мы запретили добавление
+                    const chk = document.querySelector(`input[data-id="${strId}"]`);
+                    if(chk) chk.checked = false;
+                    return; 
+                }
+                ids.push(strId);
+            }
+
+            // Сохраняем обратно в память
+            localStorage.setItem('compare_unis', ids.join(','));
+            updateBadge();
+        }
+
+        // 3. Обновить красный кружок
+        function updateBadge() {
+            const ids = getCompareIds();
             const badge = document.getElementById('compare-badge');
             
-            if (cleanIds.length > 0) {
-                badge.innerText = cleanIds.length;
+            if (ids.length > 0) {
+                badge.innerText = ids.length;
                 badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
             }
+        }
+
+        // 4. При загрузке страницы восстановить галочки
+        document.addEventListener("DOMContentLoaded", () => {
+            updateBadge(); // Обновить цифру
+            
+            // Восстановить галочки в каталоге
+            const ids = getCompareIds();
+            ids.forEach(id => {
+                const checkbox = document.querySelector(`input[data-id="${id}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
         });
     </script>
 </body>
