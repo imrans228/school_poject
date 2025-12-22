@@ -2,23 +2,25 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 import google.generativeai as genai
 import json
 import os
-import re
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_for_school_project' # Нужен для "регистрации"
+# Секретный ключ для работы сессий
+app.secret_key = os.environ.get("SECRET_KEY", "super_secret_key_default_12345")
 
-# --- ЗАГРУЗКА БАЗЫ ---
+# --- 1. ЗАГРУЗКА БАЗЫ ВУЗОВ ---
+CITIES = ['Все города', 'Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Костанай']
 universities = []
+
 try:
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(base_dir, 'universities.json'), 'r', encoding='utf-8') as f:
+    json_path = os.path.join(base_dir, 'universities.json')
+    with open(json_path, 'r', encoding='utf-8') as f:
         universities = json.load(f)
-except:
+except Exception as e:
+    print(f"⚠️ Ошибка базы данных: {e}")
     universities = []
 
-CITIES = ['Все города', 'Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Костанай']
-
-# --- AI НАСТРОЙКА ---
+# --- 2. AI НАСТРОЙКИ ---
 API_KEY = os.environ.get("API_KEY")
 model = None
 if API_KEY:
@@ -27,80 +29,89 @@ if API_KEY:
         model = genai.GenerativeModel('gemini-2.5-flash')
     except: pass
 
-# --- ФУНКЦИЯ ПОИСКА ---
-def get_relevant_universities(query):
-    query = query.lower()
-    return [u for u in universities if query in u['name'].lower() or query in u['desc'].lower()][:5]
+# --- 3. ПОЛЕЗНЫЕ ФУНКЦИИ ---
+def get_user():
+    """Безопасно получает текущего пользователя"""
+    return session.get('user')
 
-# --- РОУТЫ ---
+def get_relevant_universities(query):
+    q = query.lower()
+    return [u for u in universities if q in u.get('name', '').lower()][:5]
+
+# --- 4. МАРШРУТЫ (СТРАНИЦЫ) ---
 
 @app.route('/')
 def home():
-    user = session.get('user') # Проверяем, вошел ли человек
-    return render_template('index.html', unis=universities, user=user)
+    return render_template('index.html', unis=universities, user=get_user())
 
 @app.route('/catalog')
 def catalog():
-    # 1. Получаем данные из фильтра
-    search = request.args.get('search', '').strip().lower()
+    search = request.args.get('search', '').lower().strip()
     city = request.args.get('city', 'Все города')
     
-    filtered_unis = universities
+    result = universities
 
-    # 2. Фильтруем по городу
     if city and city != "Все города":
-        filtered_unis = [u for u in filtered_unis if u.get('city') == city]
-
-    # 3. Фильтруем по поиску (имя или описание)
+        result = [u for u in result if u.get('city') == city]
+    
     if search:
-        filtered_unis = [u for u in filtered_unis if search in u.get('name', '').lower() or search in u.get('fullName', '').lower()]
+        result = [u for u in result if search in u.get('name', '').lower()]
 
-    user = session.get('user')
-    return render_template('catalog.html', unis=filtered_unis, cities=CITIES, current_city=city, user=user)
+    return render_template('catalog.html', unis=result, cities=CITIES, current_city=city, user=get_user())
 
 @app.route('/detail/<uni_id>')
 def detail(uni_id):
     uni = next((u for u in universities if u.get('id') == uni_id), None)
-    return render_template('detail.html', uni=uni, user=session.get('user'))
+    if not uni: return "Вуз не найден", 404
+    return render_template('detail.html', uni=uni, user=get_user())
 
+# --- ВОТ ЗДЕСЬ БЫЛА ОШИБКА, ТЕПЕРЬ ИСПРАВЛЕНО ---
 @app.route('/compare')
 def compare():
-    # Получаем список ID из ссылки (например: ?ids=nu,kaznu)
-    ids = request.args.get('ids', '').split(',')
-    selected = [u for u in universities if u.get('id') in ids]
-    return render_template('compare.html', unis=selected, user=session.get('user'))
+    try:
+        ids_str = request.args.get('ids', '')
+        selected = []
+        
+        if ids_str:
+            ids = ids_str.split(',')
+            # Ищем вузы, ID которых есть в списке
+            selected = [u for u in universities if str(u.get('id')) in ids]
+            
+        return render_template('compare.html', unis=selected, user=get_user())
+    except Exception as e:
+        return f"Ошибка сервера на странице сравнения: {e}", 500
 
 @app.route('/ai')
 def ai_page():
-    return render_template('ai.html', user=session.get('user'))
+    return render_template('ai.html', user=get_user())
 
-@app.route('/api/chat', methods=['POST'])
-def chat_api():
-    if not model: return jsonify({'response': '⚠️ AI ключ не найден.'})
-    try:
-        msg = request.json.get('message', '')
-        found = get_relevant_universities(msg)
-        context = json.dumps([{'name': u['name'], 'city': u['city'], 'score': u['min_unt_score']} for u in found], ensure_ascii=False)
-        response = model.generate_content(f"Ты консультант по вузам Казахстана. Вот подходящие вузы: {context}. Вопрос клиента: {msg}")
-        return jsonify({'response': response.text})
-    except Exception as e:
-        return jsonify({'response': f"Ошибка: {e}"})
-
-# --- ЛОГИН / РЕГИСТРАЦИЯ (ФЕЙК) ---
+# --- ЛОГИН / ВЫХОД ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Просто берем имя, которое ввел пользователь
         username = request.form.get('username')
         if username:
-            session['user'] = username # Запоминаем его
+            session['user'] = username
             return redirect(url_for('home'))
-    return render_template('login.html')
+    return render_template('login.html', user=get_user())
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None) # Забываем пользователя
+    session.pop('user', None)
     return redirect(url_for('home'))
+
+# --- API AI ---
+@app.route('/api/chat', methods=['POST'])
+def chat_api():
+    if not model: return jsonify({'response': '⚠️ Ключ AI не настроен.'})
+    try:
+        msg = request.json.get('message', '')
+        found = get_relevant_universities(msg)
+        context = json.dumps([{'name': u['name'], 'city': u['city']} for u in found], ensure_ascii=False)
+        response = model.generate_content(f"Контекст: {context}. Вопрос: {msg}")
+        return jsonify({'response': response.text})
+    except Exception as e:
+        return jsonify({'response': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -9,14 +9,9 @@
 
     {% if not unis %}
     <div class="bg-yellow-50 border-l-4 border-yellow-400 p-8 rounded-r-xl text-center">
-        <div class="flex justify-center mb-4">
-            <div class="bg-yellow-100 p-4 rounded-full">
-                <i data-lucide="alert-circle" class="w-8 h-8 text-yellow-600"></i>
-            </div>
-        </div>
         <h3 class="text-xl font-bold text-yellow-800 mb-2">Список пуст</h3>
-        <p class="text-yellow-700 mb-6">Вы не выбрали ни одного вуза. Вернитесь в каталог и поставьте галочки "Сравнить".</p>
-        <a href="{{ url_for('catalog') }}" class="inline-block bg-yellow-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-yellow-700 transition shadow-lg shadow-yellow-200">
+        <p class="text-yellow-700 mb-6">Вы не выбрали вузы для сравнения.</p>
+        <a href="{{ url_for('catalog') }}" class="inline-block bg-yellow-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-yellow-700 transition">
             Перейти в каталог
         </a>
     </div>
@@ -39,17 +34,13 @@
                 <tr class="hover:bg-slate-50/50">
                     <td class="p-6 font-bold text-slate-700">Стоимость обучения</td>
                     {% for uni in unis %}
-                    <td class="p-6 text-slate-600 font-medium">{{ uni.tuition }} ₸ / год</td>
+                    <td class="p-6 text-slate-600">{{ uni.tuition }} ₸</td>
                     {% endfor %}
                 </tr>
                 <tr class="hover:bg-slate-50/50">
                     <td class="p-6 font-bold text-slate-700">Проходной балл</td>
                     {% for uni in unis %}
-                    <td class="p-6">
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold text-sm">
-                            {{ uni.min_unt_score }} баллов
-                        </span>
-                    </td>
+                    <td class="p-6"><span class="bg-green-100 text-green-800 px-2 py-1 rounded font-bold">{{ uni.min_unt_score }}</span></td>
                     {% endfor %}
                 </tr>
                 <tr class="hover:bg-slate-50/50">
@@ -58,18 +49,11 @@
                     <td class="p-6 text-yellow-500 font-bold">⭐ {{ uni.rating }}</td>
                     {% endfor %}
                 </tr>
-                <tr class="hover:bg-slate-50/50">
-                    <td class="p-6 font-bold text-slate-700">Направление</td>
-                    {% for uni in unis %}
-                    <td class="p-6 text-slate-600">{{ uni.direction }}</td>
-                    {% endfor %}
-                </tr>
                 <tr class="bg-slate-50/30">
                     <td class="p-6"></td>
                     {% for uni in unis %}
                     <td class="p-6">
-                        <button onclick="toggleCompare('{{ uni.id }}'); window.location.reload();" 
-                                class="text-red-500 hover:text-red-700 font-bold text-sm flex items-center gap-2 transition">
+                        <button onclick="removeFromCompare('{{ uni.id }}')" class="text-red-500 font-bold text-sm flex items-center gap-1 hover:underline">
                             <i data-lucide="trash-2" class="w-4 h-4"></i> Убрать
                         </button>
                     </td>
@@ -80,12 +64,25 @@
     </div>
 
     <div class="mt-8 text-center">
-        <button onclick="localStorage.removeItem('compare_unis'); window.location.href='{{ url_for('catalog') }}';" 
-                class="text-slate-500 hover:text-red-500 font-medium transition underline">
-            Очистить список
+        <button onclick="clearCompare()" class="text-slate-500 hover:text-red-500 font-medium underline">
+            Очистить весь список
         </button>
     </div>
 
+    <script>
+        // Скрипт для кнопок удаления
+        function removeFromCompare(id) {
+            let ids = localStorage.getItem('compare_unis') ? localStorage.getItem('compare_unis').split(',') : [];
+            ids = ids.filter(i => i !== id && i !== "");
+            localStorage.setItem('compare_unis', ids.join(','));
+            window.location.reload(); // Перезагрузить страницу
+        }
+
+        function clearCompare() {
+            localStorage.removeItem('compare_unis');
+            window.location.href = "{{ url_for('catalog') }}";
+        }
+    </script>
     {% endif %}
 </div>
 {% endblock %}
